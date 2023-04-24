@@ -90,6 +90,7 @@ for epoch in Flor.loop(range(num_epochs)):
 
             # Forward pass
             outputs = model(**batch, labels=target["input_ids"])
+            print("hold")
             loss = outputs[0]
             loss.backward()
             # loss = criterion(
