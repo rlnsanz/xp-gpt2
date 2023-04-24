@@ -32,8 +32,8 @@ model_name = "gpt2"
 feature_extractor = GPT2Tokenizer.from_pretrained(model_name)
 model = GPT2LMHeadModel.from_pretrained(model_name).to(device)  # type: ignore
 Flor.checkpoints(model)
-# feature_extractor.pad_token = feature_extractor.eos_token
-feature_extractor.add_special_tokens({"pad_token": "[PAD]"})  # type: ignore
+feature_extractor.pad_token = feature_extractor.eos_token
+# feature_extractor.add_special_tokens({"pad_token": "[PAD]"})  # type: ignore
 
 
 def my_collate(batch):
@@ -61,8 +61,11 @@ def my_collate(batch):
         new_features = new_features[batch_size:]
 
         paired_features = [
-            (chunk_features[i], chunk_features[(i + 1) % batch_size])
-            for i in range(batch_size)
+            (
+                chunk_features[i],
+                chunk_features[(i + 1) % min(batch_size, len(chunk_features))],
+            )
+            for i in range(min(batch_size, len(chunk_features)))
         ]
         paired_features = torchdata.default_collate(paired_features)
         yield paired_features
@@ -77,7 +80,7 @@ Flor.checkpoints(optimizer)
 
 # Train the model
 total_step = len(train_loader)
-num_steps = 1000
+num_articles = 5
 for epoch in Flor.loop(range(num_epochs)):
     model.train()
     for i, wiki_gen in Flor.loop(enumerate(train_loader)):
@@ -85,18 +88,17 @@ for epoch in Flor.loop(range(num_epochs)):
             # Move tensors to the configured device
             # text = feature_extractor.decode(each) for each in batch["input_ids"]
             batch = batch.to(device)
+            for k in batch:
+                batch[k] = batch[k].reshape(batch_size, -1)
             target = target.to(device)
+            for k in target:
+                target[k] = target[k].reshape(batch_size, -1)
             target.requires_grad = False
 
             # Forward pass
             outputs = model(**batch, labels=target["input_ids"])
-            print("hold")
             loss = outputs[0]
             loss.backward()
-            # loss = criterion(
-            #     outputs.last_hidden_state.reshape(batch_size, -1, max_length),
-            #     target["input_ids"].reshape(batch_size, max_length),
-            # )
 
             # Backward and optimize
             optimizer.zero_grad()
@@ -104,9 +106,12 @@ for epoch in Flor.loop(range(num_epochs)):
 
         print(
             "Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}".format(
-                epoch + 1, num_epochs, i, num_steps, flor.log("loss", loss.item())  # type: ignore
+                epoch + 1, num_epochs, i, num_articles, flor.log("loss", loss.item())  # type: ignore
             )
         )
+        if i + 1 == num_articles:
+            break
+
     print("Model Validate")
 
 # Test the model
