@@ -33,7 +33,6 @@ feature_extractor = GPT2Tokenizer.from_pretrained(model_name)
 model = GPT2Model.from_pretrained(model_name).to(device)  # type: ignore
 Flor.checkpoints(model)
 feature_extractor.padding_side = "right"
-feature_extractor.pad_token_id = 0
 feature_extractor.pad_token = feature_extractor.eos_token
 # feature_extractor.add_special_tokens({"pad_token": "[PAD]"})  # type: ignore
 
