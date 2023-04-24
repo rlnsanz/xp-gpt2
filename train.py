@@ -4,20 +4,20 @@ import torch.nn.functional as F
 from torch.utils import data as torchdata
 from torch.autograd import Variable
 
-from transformers import GPT2Tokenizer, GPT2Model
+from transformers import AutoTokenizer, AutoModelForCausalLM
 from datasets import load_dataset, DatasetDict, Dataset
 
 import flor
 from flor import MTK as Flor
 
 # Device configuration
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 
 # Hyper-parameters
 num_epochs = 5
-batch_size = 6
+batch_size = 2
 learning_rate = 0.001
-max_length = 480
+max_length = 256
 
 # Data loader
 data = load_dataset("wikipedia", "20220301.en")
@@ -28,15 +28,20 @@ assert set(data.keys()) == {
 assert isinstance(data["train"], Dataset)
 assert set(data["train"].features) == {"id", "url", "title", "text"}
 
-model_name = "gpt2"
-feature_extractor = GPT2Tokenizer.from_pretrained(model_name)
-model = GPT2Model.from_pretrained(model_name).to(device)  # type: ignore
+model_name = "cerebras/Cerebras-GPT-111M"
+feature_extractor = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(model_name).to(device)  # type: ignore
 Flor.checkpoints(model)
+feature_extractor.padding_side = "left"
+feature_extractor.pad_token_id = feature_extractor.eos_token_id
+feature_extractor.pad_token = feature_extractor.eos_token
+# feature_extractor.add_tokens({"pad_token": feature_extractor.eos_token, "pad_token_id": feature_extractor.eos_token_id})  # type: ignore
 
 
 def my_collate(batch):
     original_text = []
     for i, record in enumerate(batch):
+        print(len(record["text"]))
         original_text.append(record["text"])
     new_features = feature_extractor(
         original_text,
@@ -50,7 +55,7 @@ def my_collate(batch):
     return new_features
 
 
-train_loader = torchdata.DataLoader(dataset=data["train"].with_format("torch"), batch_size=batch_size, shuffle=True, collate_fn=my_collate)  # type: ignore
+train_loader = torchdata.DataLoader(dataset=data["train"].with_format("torch"), batch_size=batch_size, shuffle=False, collate_fn=my_collate)  # type: ignore
 
 # Loss and optimizer
 criterion = nn.CrossEntropyLoss()
@@ -68,9 +73,15 @@ for epoch in Flor.loop(range(num_epochs)):
         batch = batch.to(device)
 
         # Forward pass
-        outputs = model(**batch)
+        outputs = model.generate(
+            **batch,
+            num_beams=5,
+            max_new_tokens=50,
+            early_stopping=True,
+            no_repeat_ngram_size=2
+        )
         loss = criterion(
-            outputs.prediction_logits.reshape((batch_size, -1, max_length)),
+            outputs.last_hidden_state.reshape(batch_size, -1, max_length),
             batch["input_ids"],
         )
 
