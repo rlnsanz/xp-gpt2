@@ -80,7 +80,7 @@ Flor.checkpoints(optimizer)
 
 # Train the model
 total_step = len(train_loader)
-num_articles = 5
+num_articles = 25
 for epoch in Flor.loop(range(num_epochs)):
     model.train()
     for i, wiki_gen in Flor.loop(enumerate(train_loader)):
