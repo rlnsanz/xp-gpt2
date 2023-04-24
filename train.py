@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch.utils import data as torchdata
 from torch.autograd import Variable
 
-from transformers import GPT2Tokenizer, GPT2Model, AutoTokenizer
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
 from datasets import load_dataset, DatasetDict, Dataset
 
 import flor
@@ -29,8 +29,8 @@ assert isinstance(data["train"], Dataset)
 assert set(data["train"].features) == {"id", "url", "title", "text"}
 
 model_name = "gpt2"
-feature_extractor = GPT2Tokenizer.from_pretrained("bert-base-uncased")
-model = GPT2Model.from_pretrained(model_name).to(device)  # type: ignore
+feature_extractor = GPT2Tokenizer.from_pretrained(model_name)
+model = GPT2LMHeadModel.from_pretrained(model_name).to(device)  # type: ignore
 Flor.checkpoints(model)
 # feature_extractor.pad_token = feature_extractor.eos_token
 feature_extractor.add_special_tokens({"pad_token": "[PAD]"})  # type: ignore
@@ -72,7 +72,7 @@ train_loader = torchdata.DataLoader(dataset=data["train"].with_format("torch"), 
 
 # Loss and optimizer
 criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 Flor.checkpoints(optimizer)
 
 # Train the model
@@ -89,15 +89,16 @@ for epoch in Flor.loop(range(num_epochs)):
             target.requires_grad = False
 
             # Forward pass
-            outputs = model(**batch)
-            loss = criterion(
-                outputs.last_hidden_state.reshape(batch_size, -1, max_length),
-                target["input_ids"].reshape(batch_size, max_length),
-            )
+            outputs = model(**batch, labels=target["input_ids"])
+            loss = outputs[0]
+            loss.backward()
+            # loss = criterion(
+            #     outputs.last_hidden_state.reshape(batch_size, -1, max_length),
+            #     target["input_ids"].reshape(batch_size, max_length),
+            # )
 
             # Backward and optimize
             optimizer.zero_grad()
-            loss.backward()
             optimizer.step()
 
         print(
