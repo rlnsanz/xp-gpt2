@@ -32,10 +32,10 @@ model_name = "gpt2-large"
 feature_extractor = GPT2Tokenizer.from_pretrained(model_name)
 model = GPT2Model.from_pretrained(model_name).to(device)  # type: ignore
 Flor.checkpoints(model)
-# feature_extractor.padding_side = "right"
-# feature_extractor.pad_token_id = feature_extractor.eos_token_id
-# feature_extractor.pad_token = feature_extractor.eos_token
-feature_extractor.add_special_tokens({"pad_token": "[PAD]"})  # type: ignore
+feature_extractor.padding_side = "right"
+feature_extractor.pad_token_id = 0
+feature_extractor.pad_token = feature_extractor.eos_token
+# feature_extractor.add_special_tokens({"pad_token": "[PAD]"})  # type: ignore
 
 
 def my_collate(batch):
@@ -91,7 +91,6 @@ for epoch in Flor.loop(range(num_epochs)):
 
             # Forward pass
             outputs = model(**batch)
-            print("hold")
             loss = criterion(
                 outputs.last_hidden_state.reshape(batch_size, -1, max_length),
                 target["input_ids"].reshape(batch_size, max_length),
