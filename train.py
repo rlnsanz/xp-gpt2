@@ -28,13 +28,12 @@ assert set(data.keys()) == {
 assert isinstance(data["train"], Dataset)
 assert set(data["train"].features) == {"id", "url", "title", "text"}
 
-model_name = "gpt2-large"
-feature_extractor = GPT2Tokenizer.from_pretrained(model_name)
+model_name = "gpt2"
+feature_extractor = GPT2Tokenizer.from_pretrained("bert-base-uncased")
 model = GPT2Model.from_pretrained(model_name).to(device)  # type: ignore
 Flor.checkpoints(model)
-feature_extractor.padding_side = "right"
-feature_extractor.pad_token = feature_extractor.eos_token
-# feature_extractor.add_special_tokens({"pad_token": "[PAD]"})  # type: ignore
+# feature_extractor.pad_token = feature_extractor.eos_token
+feature_extractor.add_special_tokens({"pad_token": "[PAD]"})  # type: ignore
 
 
 def my_collate(batch):
@@ -87,6 +86,7 @@ for epoch in Flor.loop(range(num_epochs)):
             # text = feature_extractor.decode(each) for each in batch["input_ids"]
             batch = batch.to(device)
             target = target.to(device)
+            target.requires_grad = False
 
             # Forward pass
             outputs = model(**batch)
