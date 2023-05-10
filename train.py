@@ -15,16 +15,22 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Hyper-parameters
 # type
-num_epochs = flor.arg("epochs", default=5)
-learning_rate = flor.arg("lr", 1e-3)
-max_length = flor.arg("max_length", 64)
-batch_size = flor.arg("batch_size", 4)
+# num_epochs = flor.arg("epochs", default=5)
+# learning_rate = flor.arg("lr", 1e-3)
+# max_length = flor.arg("max_length", 64)
+# batch_size = flor.arg("batch_size", 4)
+
+num_epochs = 2
+learning_rate = 1e-3
+max_length = 64
+batch_size = 4
 
 # Data loader
-data = load_dataset("wikipedia", "20220301.en")  # type: ignore
+data = load_dataset("wikipedia", "20220301.en")["train"].train_test_split(test_size=0.2)  # type: ignore
 assert isinstance(data, DatasetDict)
 assert set(data.keys()) == {
     "train",
+    "test"
 }  # type: ignore
 assert isinstance(data["train"], Dataset)
 assert set(data["train"].features) == {"id", "url", "title", "text"}
@@ -73,6 +79,7 @@ def my_collate(batch):
 
 
 train_loader = torchdata.DataLoader(dataset=data["train"].with_format("torch"), batch_size=1, shuffle=False, collate_fn=my_collate)  # type: ignore
+val_loader = torchdata.DataLoader(dataset=data["test"].with_format("torch"), batch_size=1, shuffle=False, collate_fn=my_collate)
 
 # Loss and optimizer
 criterion = nn.CrossEntropyLoss()
@@ -118,3 +125,30 @@ for epoch in Flor.loop(range(num_epochs)):
 # Test the model
 # In test phase, we don't need to compute gradients (for memory efficiency)
 print("Model TEST")
+model.eval()
+with torch.no_grad():
+    total_loss = 0
+    total = 0 
+    print(f"evaluating for {len(val_loader)} rounds")
+    for i, wiki_gen in Flor.loop(enumerate(val_loader)):
+        for (batch, target) in wiki_gen:
+            # Move tensors to the configured device
+            # text = feature_extractor.decode(each) for each in batch["input_ids"]
+            batch = batch.to(device)
+            for k in batch:
+                batch[k] = batch[k].reshape(batch_size, -1)
+            target = target.to(device)
+            for k in target:
+                target[k] = target[k].reshape(batch_size, -1)
+            target.requires_grad = False
+
+            # Forward pass
+            outputs = model(**batch, labels=target["input_ids"])
+            total_loss += outputs[0]
+            total += batch.shape[0]
+
+        ppl = torch.exp(total_loss/total)
+        print(ppl)
+
+
+            
