@@ -20,7 +20,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # max_length = flor.arg("max_length", 64)
 # batch_size = flor.arg("batch_size", 4)
 
-num_epochs = 2
+num_epochs = 0
 learning_rate = 1e-3
 max_length = 64
 batch_size = 4
@@ -145,10 +145,10 @@ with torch.no_grad():
             # Forward pass
             outputs = model(**batch, labels=target["input_ids"])
             total_loss += outputs[0]
-            total += batch.shape[0]
+            total += target['input_ids'].shape[0]
 
-        ppl = torch.exp(total_loss/total)
-        print(ppl)
+    ppl = torch.exp(total_loss/total)
+    print("perplexity: ", ppl)
 
 
             
