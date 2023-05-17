@@ -79,7 +79,7 @@ def my_collate(batch):
 
 
 train_loader = torchdata.DataLoader(dataset=data["train"].with_format("torch"), batch_size=1, shuffle=False, collate_fn=my_collate)  # type: ignore
-val_loader = torchdata.DataLoader(dataset=data["test"].with_format("torch"), batch_size=1, shuffle=False, collate_fn=my_collate)
+val_loader = torchdata.DataLoader(dataset=data["test"].with_format("torch"), batch_size=1, shuffle=False, collate_fn=my_collate) # type: ignore
 
 # Loss and optimizer
 criterion = nn.CrossEntropyLoss()
@@ -147,7 +147,7 @@ with torch.no_grad():
             total_loss += outputs[0]
             total += target['input_ids'].shape[0]
 
-    ppl = torch.exp(total_loss/total)
+    ppl = torch.exp(total_loss/total) # type: ignore
     print("perplexity: ", ppl)
 
 
