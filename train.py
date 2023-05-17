@@ -14,16 +14,10 @@ from flor import MTK as Flor
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Hyper-parameters
-# type
-# num_epochs = flor.arg("epochs", default=5)
-# learning_rate = flor.arg("lr", 1e-3)
-# max_length = flor.arg("max_length", 64)
-# batch_size = flor.arg("batch_size", 4)
-
-num_epochs = 0
-learning_rate = 1e-3
-max_length = 64
-batch_size = 4
+num_epochs = flor.arg("epochs", default=5)
+learning_rate = flor.arg("lr", 1e-3)
+max_length = flor.arg("max_length", 64)
+batch_size = flor.arg("batch_size", 4)
 
 # Data loader
 data = load_dataset("wikipedia", "20220301.en")["train"].train_test_split(test_size=0.2)  # type: ignore
