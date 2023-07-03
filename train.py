@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch.utils import data as torchdata
 from torch.autograd import Variable
 
-from transformers import GPT2LMHeadModel, GPT2Tokenizer
+from transformers import GPT2LMHeadModel, GPT2Tokenizer # type: ignore
 from datasets import load_dataset, DatasetDict, Dataset
 
 import flor
