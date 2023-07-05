@@ -112,6 +112,7 @@ for epoch in Flor.loop(range(num_epochs)):
             break
 
     print("Model Validate", epoch)
+    flor.log("dp", epoch)
 
 # Test the model
 # In test phase, we don't need to compute gradients (for memory efficiency)
@@ -143,3 +144,4 @@ with torch.no_grad():
 
     ppl = torch.exp(total_loss / total)  # type: ignore
     print("perplexity: ", ppl)
+    flor.log("ppl", ppl)
