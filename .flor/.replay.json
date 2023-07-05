@@ -1,0 +1,12 @@
+{
+    "NAME": "BATCH",
+    "TSTAMP": "2023-07-03T21:17:53.json",
+    "epochs": 5,
+    "PROJID": "xp-gpt2_flor.shadow.sigmod",
+    "EPOCHS": 101,
+    "CLI": {
+        "lr": "0.001",
+        "max_length": "128",
+        "batch_size": "16"
+    }
+}

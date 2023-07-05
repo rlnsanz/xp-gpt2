@@ -15,6 +15,17 @@
                 "--flor",
                 "debugRun"
             ]
+        },
+        {
+            "name": "Flor Replay: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--replay_flor"
+            ]
         }
     ]
 }

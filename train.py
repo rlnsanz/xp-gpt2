@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch.utils import data as torchdata
 from torch.autograd import Variable
 
-from transformers import GPT2LMHeadModel, GPT2Tokenizer # type: ignore
+from transformers import GPT2LMHeadModel, GPT2Tokenizer  # type: ignore
 from datasets import load_dataset, DatasetDict, Dataset
 
 import flor
@@ -22,10 +22,7 @@ batch_size = flor.arg("batch_size", 4)
 # Data loader
 data = load_dataset("wikipedia", "20220301.en")["train"].train_test_split(test_size=0.2)  # type: ignore
 assert isinstance(data, DatasetDict)
-assert set(data.keys()) == {
-    "train",
-    "test"
-}  # type: ignore
+assert set(data.keys()) == {"train", "test"}  # type: ignore
 assert isinstance(data["train"], Dataset)
 assert set(data["train"].features) == {"id", "url", "title", "text"}
 
@@ -73,7 +70,7 @@ def my_collate(batch):
 
 
 train_loader = torchdata.DataLoader(dataset=data["train"].with_format("torch"), batch_size=1, shuffle=False, collate_fn=my_collate)  # type: ignore
-val_loader = torchdata.DataLoader(dataset=data["test"].with_format("torch"), batch_size=1, shuffle=False, collate_fn=my_collate) # type: ignore
+val_loader = torchdata.DataLoader(dataset=data["test"].with_format("torch"), batch_size=1, shuffle=False, collate_fn=my_collate)  # type: ignore
 
 # Loss and optimizer
 criterion = nn.CrossEntropyLoss()
@@ -86,7 +83,7 @@ num_articles = 25
 for epoch in Flor.loop(range(num_epochs)):
     model.train()
     for i, wiki_gen in Flor.loop(enumerate(train_loader)):
-        for (batch, target) in wiki_gen:
+        for batch, target in wiki_gen:
             # Move tensors to the configured device
             # text = feature_extractor.decode(each) for each in batch["input_ids"]
             batch = batch.to(device)
@@ -114,7 +111,7 @@ for epoch in Flor.loop(range(num_epochs)):
         if i + 1 == num_articles:
             break
 
-    print("Model Validate")
+    print("Model Validate", epoch)
 
 # Test the model
 # In test phase, we don't need to compute gradients (for memory efficiency)
@@ -122,10 +119,13 @@ print("Model TEST")
 model.eval()
 with torch.no_grad():
     total_loss = 0
-    total = 0 
+    total = 0
     print(f"evaluating for {len(val_loader)} rounds")
-    for i, wiki_gen in Flor.loop(enumerate(val_loader)):
-        for (batch, target) in wiki_gen:
+    for i, wiki_gen in enumerate(val_loader):
+        if i >= 100:
+            break
+        print(i)
+        for batch, target in wiki_gen:
             # Move tensors to the configured device
             # text = feature_extractor.decode(each) for each in batch["input_ids"]
             batch = batch.to(device)
@@ -139,10 +139,7 @@ with torch.no_grad():
             # Forward pass
             outputs = model(**batch, labels=target["input_ids"])
             total_loss += outputs[0]
-            total += target['input_ids'].shape[0]
+            total += target["input_ids"].shape[0]
 
-    ppl = torch.exp(total_loss/total) # type: ignore
+    ppl = torch.exp(total_loss / total)  # type: ignore
     print("perplexity: ", ppl)
-
-
-            
