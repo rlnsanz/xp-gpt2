@@ -11,7 +11,7 @@ import flor
 from flor import MTK as Flor
 
 # Device configuration
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device(flor.arg("device", "cuda" if torch.cuda.is_available() else "cpu"))
 
 # Hyper-parameters
 num_epochs = flor.arg("epochs", default=5)
@@ -79,7 +79,7 @@ Flor.checkpoints(optimizer)
 
 # Train the model
 total_step = len(train_loader)
-num_articles = 25
+num_articles = 2500
 for epoch in Flor.loop(range(num_epochs)):
     model.train()
     for i, wiki_gen in Flor.loop(enumerate(train_loader)):
